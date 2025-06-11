@@ -11,9 +11,12 @@ class TicTacToe:
         self.board = [["" for _ in range(3)] for _ in range(3)]
         self.player_score = 0
         self.computer_score = 0
+        self.winning_combo = []
+        self.game_over = False
         self.create_title()
         self.create_scoreboard()
         self.create_board()
+        self.create_reset_button()
 
     def create_title(self):
         self.title_label = tk.Label(
@@ -53,13 +56,25 @@ class TicTacToe:
                 button.bind("<Leave>", lambda e, r=i, c=j: self.on_hover(r, c, False))
                 self.buttons[i][j] = button
 
+    def create_reset_button(self):
+        self.reset_button = tk.Button(
+            self.root,
+            text="🔄 Play Again",
+            font=("Verdana", 12, "bold"),
+            bg="#00ffff",
+            fg="black",
+            command=self.reset_game,
+            state="disabled"
+        )
+        self.reset_button.grid(row=5, column=0, columnspan=3, pady=10)
+
     def on_hover(self, row, col, entering):
-        if self.board[row][col] == "":
+        if self.board[row][col] == "" and not self.game_over:
             color = "#444444" if entering else "#333333"
             self.buttons[row][col].config(bg=color)
 
     def player_move(self, row, col):
-        if self.board[row][col] == "":
+        if self.board[row][col] == "" and not self.game_over:
             self.board[row][col] = "X"
             self.buttons[row][col].config(text="X", fg="#00ffff", bg="#1a1a1a", state="disabled")
             if self.check_winner("X"):
@@ -72,6 +87,8 @@ class TicTacToe:
                 self.root.after(500, self.computer_move)
 
     def computer_move(self):
+        if self.game_over:
+            return
         empty = [(i, j) for i in range(3) for j in range(3) if self.board[i][j] == ""]
         if empty:
             row, col = random.choice(empty)
@@ -109,9 +126,16 @@ class TicTacToe:
             self.buttons[row][col].config(bg="#00cc66" if player == "X" else "#ff5050")
 
     def end_game(self, message):
+        self.game_over = True
         self.update_scoreboard()
-        self.root.after(600, lambda: messagebox.showinfo("Game Over", message))
-        self.root.after(700, self.reset_game)
+        self.disable_all_buttons()
+        messagebox.showinfo("Game Over", message)
+        self.reset_button.config(state="normal")
+
+    def disable_all_buttons(self):
+        for i in range(3):
+            for j in range(3):
+                self.buttons[i][j].config(state="disabled")
 
     def update_scoreboard(self):
         self.score_label.config(
@@ -119,11 +143,15 @@ class TicTacToe:
         )
 
     def reset_game(self):
+        self.game_over = False
         self.winning_combo = []
         for i in range(3):
             for j in range(3):
                 self.board[i][j] = ""
-                self.buttons[i][j].config(text="", fg="white", bg="#333333", state="normal")
+                self.buttons[i][j].config(
+                    text="", fg="white", bg="#333333", state="normal"
+                )
+        self.reset_button.config(state="disabled")
 
 if __name__ == "__main__":
     root = tk.Tk()
