@@ -1,0 +1,131 @@
+import tkinter as tk
+from tkinter import messagebox
+import random
+
+class TicTacToe:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("🎮 Tic-Tac-Toe: You vs Computer")
+        self.root.configure(bg="#1e1e1e")
+        self.buttons = [[None for _ in range(3)] for _ in range(3)]
+        self.board = [["" for _ in range(3)] for _ in range(3)]
+        self.player_score = 0
+        self.computer_score = 0
+        self.create_title()
+        self.create_scoreboard()
+        self.create_board()
+
+    def create_title(self):
+        self.title_label = tk.Label(
+            self.root, text="🎮 Tic-Tac-Toe", font=("Comic Sans MS", 24, "bold"),
+            bg="#1e1e1e", fg="#00ffff", pady=10
+        )
+        self.title_label.grid(row=0, column=0, columnspan=3)
+
+    def create_scoreboard(self):
+        self.score_label = tk.Label(
+            self.root,
+            text=f"You: {self.player_score}  |  Computer: {self.computer_score}",
+            font=("Verdana", 12),
+            bg="#1e1e1e",
+            fg="white"
+        )
+        self.score_label.grid(row=1, column=0, columnspan=3, pady=(0, 10))
+
+    def create_board(self):
+        for i in range(3):
+            for j in range(3):
+                button = tk.Button(
+                    self.root,
+                    text="",
+                    font=("Arial", 36, "bold"),
+                    width=5,
+                    height=2,
+                    bg="#333333",
+                    fg="white",
+                    relief="ridge",
+                    borderwidth=4,
+                    activebackground="#555555",
+                    command=lambda row=i, col=j: self.player_move(row, col)
+                )
+                button.grid(row=i+2, column=j, padx=5, pady=5)
+                button.bind("<Enter>", lambda e, r=i, c=j: self.on_hover(r, c, True))
+                button.bind("<Leave>", lambda e, r=i, c=j: self.on_hover(r, c, False))
+                self.buttons[i][j] = button
+
+    def on_hover(self, row, col, entering):
+        if self.board[row][col] == "":
+            color = "#444444" if entering else "#333333"
+            self.buttons[row][col].config(bg=color)
+
+    def player_move(self, row, col):
+        if self.board[row][col] == "":
+            self.board[row][col] = "X"
+            self.buttons[row][col].config(text="X", fg="#00ffff", bg="#1a1a1a", state="disabled")
+            if self.check_winner("X"):
+                self.player_score += 1
+                self.highlight_winner("X")
+                self.end_game("🎉 You win!")
+            elif self.check_draw():
+                self.end_game("😐 It's a draw!")
+            else:
+                self.root.after(500, self.computer_move)
+
+    def computer_move(self):
+        empty = [(i, j) for i in range(3) for j in range(3) if self.board[i][j] == ""]
+        if empty:
+            row, col = random.choice(empty)
+            self.board[row][col] = "O"
+            self.buttons[row][col].config(text="O", fg="#ff4d4d", bg="#1a1a1a", state="disabled")
+            if self.check_winner("O"):
+                self.computer_score += 1
+                self.highlight_winner("O")
+                self.end_game("🤖 Computer wins!")
+            elif self.check_draw():
+                self.end_game("😐 It's a draw!")
+
+    def check_winner(self, player):
+        self.winning_combo = []
+        for i in range(3):
+            if all(self.board[i][j] == player for j in range(3)):
+                self.winning_combo = [(i, j) for j in range(3)]
+                return True
+            if all(self.board[j][i] == player for j in range(3)):
+                self.winning_combo = [(j, i) for j in range(3)]
+                return True
+        if all(self.board[i][i] == player for i in range(3)):
+            self.winning_combo = [(i, i) for i in range(3)]
+            return True
+        if all(self.board[i][2 - i] == player for i in range(3)):
+            self.winning_combo = [(i, 2 - i) for i in range(3)]
+            return True
+        return False
+
+    def check_draw(self):
+        return all(self.board[i][j] != "" for i in range(3) for j in range(3))
+
+    def highlight_winner(self, player):
+        for row, col in self.winning_combo:
+            self.buttons[row][col].config(bg="#00cc66" if player == "X" else "#ff5050")
+
+    def end_game(self, message):
+        self.update_scoreboard()
+        self.root.after(600, lambda: messagebox.showinfo("Game Over", message))
+        self.root.after(700, self.reset_game)
+
+    def update_scoreboard(self):
+        self.score_label.config(
+            text=f"You: {self.player_score}  |  Computer: {self.computer_score}"
+        )
+
+    def reset_game(self):
+        self.winning_combo = []
+        for i in range(3):
+            for j in range(3):
+                self.board[i][j] = ""
+                self.buttons[i][j].config(text="", fg="white", bg="#333333", state="normal")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    game = TicTacToe(root)
+    root.mainloop()
